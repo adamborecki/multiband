@@ -117,7 +117,11 @@
 
   function render(root) {
     root.innerHTML = '';
-    const state = { answered: new Array(QUESTIONS.length).fill(false), correct: 0 };
+    const state = {
+      answered: new Array(QUESTIONS.length).fill(false),
+      chosen:   new Array(QUESTIONS.length).fill(null),
+      correct:  0,
+    };
 
     QUESTIONS.forEach((item, qi) => {
       const card = document.createElement('div');
@@ -134,15 +138,14 @@
         btn.addEventListener('click', () => {
           if (state.answered[qi]) return;
           state.answered[qi] = true;
+          state.chosen[qi] = oi;
           const correct = oi === item.correct;
           if (correct) state.correct++;
           btn.classList.add(correct ? 'correct' : 'wrong');
           if (!correct) {
-            // highlight correct answer too
             const correctBtn = opts.children[item.correct];
             correctBtn.classList.add('correct');
           }
-          // disable others
           Array.from(opts.children).forEach(c => c.disabled = true);
           explain.classList.add('show');
           updateScore();
@@ -164,6 +167,13 @@
     score.innerHTML = `Score: <span class="big">0 / ${QUESTIONS.length}</span>`;
     root.appendChild(score);
 
+    // Summary / clipboard controls
+    const summary = buildSummaryBlock({
+      title: 'Quiz Summary',
+      generate: () => buildQuizSummary(state),
+    });
+    root.appendChild(summary);
+
     function updateScore() {
       const answeredCount = state.answered.filter(Boolean).length;
       score.innerHTML = `Score: <span class="big">${state.correct} / ${QUESTIONS.length}</span>`;
@@ -179,11 +189,89 @@
     }
   }
 
+  function buildQuizSummary(state) {
+    const answered = state.answered.filter(Boolean).length;
+    const pct = answered === 0 ? 0 : Math.round(100 * state.correct / QUESTIONS.length);
+    const lines = [];
+    lines.push('Multiband Compression — Quiz Summary');
+    lines.push(`Date: ${new Date().toLocaleString()}`);
+    lines.push(`Score: ${state.correct} / ${QUESTIONS.length} (${pct}%)`);
+    lines.push(`Questions answered: ${answered} / ${QUESTIONS.length}`);
+    lines.push('');
+    QUESTIONS.forEach((q, i) => {
+      const chosen = state.chosen[i];
+      const correctIdx = q.correct;
+      let status;
+      if (chosen == null) status = 'unanswered';
+      else if (chosen === correctIdx) status = 'CORRECT';
+      else status = 'wrong';
+      lines.push(`${i + 1}. ${q.q}`);
+      if (chosen != null) lines.push(`   Your answer: ${q.options[chosen]}`);
+      else lines.push(`   Your answer: (skipped)`);
+      lines.push(`   Correct answer: ${q.options[correctIdx]}`);
+      lines.push(`   Result: ${status}`);
+      lines.push('');
+    });
+    return lines.join('\n');
+  }
+
   function escape(s) {
     return s.replace(/[&<>"']/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
   }
 
+  // Shared summary/copy UI (also used by Challenge.js via window.SummaryUI)
+  function buildSummaryBlock({ title, generate }) {
+    const wrap = document.createElement('div');
+    wrap.className = 'summary-block';
+    const row = document.createElement('div');
+    row.className = 'summary-actions';
+    const genBtn = document.createElement('button');
+    genBtn.className = 'btn primary';
+    genBtn.type = 'button';
+    genBtn.textContent = 'Generate summary';
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn';
+    copyBtn.type = 'button';
+    copyBtn.textContent = 'Copy to clipboard';
+    copyBtn.disabled = true;
+    const status = document.createElement('span');
+    status.className = 'summary-status';
+    row.appendChild(genBtn);
+    row.appendChild(copyBtn);
+    row.appendChild(status);
+
+    const ta = document.createElement('textarea');
+    ta.className = 'summary-textarea';
+    ta.readOnly = true;
+    ta.placeholder = `Click "Generate summary" to build a copyable ${title.toLowerCase()}.`;
+
+    genBtn.addEventListener('click', () => {
+      ta.value = generate();
+      copyBtn.disabled = false;
+      status.textContent = 'Ready to copy.';
+      ta.scrollTop = 0;
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      if (!ta.value) return;
+      try {
+        await navigator.clipboard.writeText(ta.value);
+        status.textContent = 'Copied ✓';
+      } catch {
+        ta.select();
+        document.execCommand && document.execCommand('copy');
+        status.textContent = 'Copied (fallback) ✓';
+      }
+      setTimeout(() => { status.textContent = ''; }, 2500);
+    });
+
+    wrap.appendChild(row);
+    wrap.appendChild(ta);
+    return wrap;
+  }
+
+  window.SummaryUI = { buildSummaryBlock };
   window.Quiz = { render };
 })();

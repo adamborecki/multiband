@@ -43,24 +43,27 @@
 
   function render(root) {
     root.innerHTML = '';
-    SCENARIOS.forEach(sc => {
+    const responses = SCENARIOS.map(() => []); // responses[scIdx][qIdx] = textarea
+
+    SCENARIOS.forEach((sc, scIdx) => {
       const card = document.createElement('div');
       card.className = 'challenge-card';
       card.innerHTML = `
         <h3>${escape(sc.title)}</h3>
         <div class="brief">${escape(sc.brief)}<br><em style="color:var(--muted)">${escape(sc.suggested)}</em></div>
       `;
-      sc.questions.forEach((q, i) => {
+      sc.questions.forEach((q, qIdx) => {
         const label = document.createElement('label');
         label.style.display = 'block';
         label.style.marginTop = '10px';
         label.style.color = 'var(--muted)';
         label.style.fontSize = '13px';
-        label.textContent = `${i + 1}. ${q}`;
+        label.textContent = `${qIdx + 1}. ${q}`;
         const ta = document.createElement('textarea');
         ta.placeholder = "Your thoughts…";
         label.appendChild(ta);
         card.appendChild(label);
+        responses[scIdx][qIdx] = ta;
       });
       const btn = document.createElement('button');
       btn.className = 'btn';
@@ -77,6 +80,32 @@
       card.appendChild(reveal);
       root.appendChild(card);
     });
+
+    const summary = window.SummaryUI.buildSummaryBlock({
+      title: 'Challenge Summary',
+      generate: () => buildChallengeSummary(responses),
+    });
+    root.appendChild(summary);
+  }
+
+  function buildChallengeSummary(responses) {
+    const lines = [];
+    lines.push('Multiband Compression — Challenge Reflections');
+    lines.push(`Date: ${new Date().toLocaleString()}`);
+    lines.push('');
+    SCENARIOS.forEach((sc, scIdx) => {
+      lines.push(`== ${sc.title} ==`);
+      lines.push(`Brief: ${sc.brief}`);
+      lines.push('');
+      sc.questions.forEach((q, qIdx) => {
+        const answer = (responses[scIdx][qIdx]?.value || '').trim();
+        lines.push(`Q${qIdx + 1}: ${q}`);
+        lines.push(`A: ${answer || '(no response)'}`);
+        lines.push('');
+      });
+      lines.push('');
+    });
+    return lines.join('\n');
   }
 
   function escape(s) {

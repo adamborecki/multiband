@@ -503,6 +503,39 @@ canvas {
 .challenge-reveal.show { display: block; }
 .challenge-reveal strong { color: var(--success); }
 
+/* ===== Summary / Copy block (shared by Quiz + Challenge) ===== */
+.summary-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  margin-top: 18px;
+}
+.summary-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.summary-status {
+  font-size: 13px;
+  color: var(--success);
+  font-family: var(--mono);
+  min-height: 1em;
+}
+.summary-textarea {
+  width: 100%;
+  min-height: 180px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  font: 12.5px/1.5 var(--mono);
+  resize: vertical;
+}
+
 /* ===== Footer ===== */
 .site-footer {
   border-top: 1px solid var(--border);
