@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Multiband Compression — Interactive Lesson</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <h1>Multiband Compression</h1>
+    <p class="tagline">An interactive lesson — split, squeeze, and glue your mix.</p>
+  </div>
+</header>
+
+<nav class="tabs wrap" role="tablist" aria-label="Lesson sections">
+  <button class="tab active" role="tab" aria-selected="true" data-tab="guided">Guided</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="playground">Playground</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="quiz">Quiz</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="challenge">Challenge</button>
+</nav>
+
+<main class="wrap">
+
+  <!-- ============ GUIDED ============ -->
+  <section id="guided" class="panel active" role="tabpanel">
+
+    <article class="lesson">
+      <h2>1. Quick refresher: threshold & ratio</h2>
+      <p>
+        A <strong>compressor</strong> turns down loud parts of a signal automatically.
+        Two knobs do most of the work:
+      </p>
+      <ul>
+        <li><strong>Threshold</strong> — the level (in dB) above which compression kicks in.</li>
+        <li><strong>Ratio</strong> — how hard it squeezes. 4:1 means every 4 dB over the threshold becomes 1 dB at the output.</li>
+      </ul>
+      <div class="refresher-widget" id="refresher">
+        <div class="refresher-controls">
+          <label>Threshold <span class="num" data-for="ref-thresh">-18 dB</span>
+            <input type="range" id="ref-thresh" min="-60" max="0" value="-18" step="0.5" />
+          </label>
+          <label>Ratio <span class="num" data-for="ref-ratio">4:1</span>
+            <input type="range" id="ref-ratio" min="1" max="20" value="4" step="0.5" />
+          </label>
+        </div>
+        <canvas id="refresher-canvas" width="520" height="260" aria-label="Input vs output transfer curve"></canvas>
+        <p class="caption">Straight line = no compression. The bend at the threshold shows the ratio squeezing everything above it.</p>
+      </div>
+    </article>
+
+    <article class="lesson">
+      <h2>2. Why split into bands?</h2>
+      <p>
+        A regular (single-band) compressor reacts to the <em>whole signal</em>. So a loud
+        kick drum can duck the vocals, or a boomy bass note can pull the whole mix down
+        for a second — known as <strong>pumping</strong>.
+      </p>
+      <p>
+        A <strong>multiband compressor</strong> first splits the signal into frequency
+        bands (typically low, mid, and high) using <strong>crossover filters</strong>, then
+        compresses each band independently, then sums them back together.
+      </p>
+      <div class="figure">
+        <pre class="ascii">
+  ┌──────── Low band ─────── Compressor ─┐
+  │                                      │
+  in ──┼──────── Mid band ─────── Compressor ─┼──► out
+  │                                      │
+  └──────── High band ─────── Compressor ─┘
+        </pre>
+        <p class="caption">The big idea: tame the thing that's too loud without touching everything else.</p>
+      </div>
+    </article>
+
+    <article class="lesson">
+      <h2>3. Crossover frequencies</h2>
+      <p>
+        The <strong>crossovers</strong> define where one band ends and the next begins.
+        Two crossover points (low/mid and mid/high) give you three bands. Typical starting
+        points:
+      </p>
+      <ul>
+        <li><strong>Low / Mid crossover</strong>: 120 – 250 Hz (separates bass from body)</li>
+        <li><strong>Mid / High crossover</strong>: 2 – 5 kHz (separates body from presence/air)</li>
+      </ul>
+      <div class="crossover-widget" id="crossover">
+        <canvas id="crossover-canvas" width="720" height="180" aria-label="Frequency spectrum with crossover points"></canvas>
+        <div class="xover-controls">
+          <label>Low/Mid <span class="num" data-for="xo-low">150 Hz</span>
+            <input type="range" id="xo-low" min="40" max="1000" value="150" step="1" />
+          </label>
+          <label>Mid/High <span class="num" data-for="xo-high">3000 Hz</span>
+            <input type="range" id="xo-high" min="800" max="12000" value="3000" step="10" />
+          </label>
+        </div>
+        <p class="caption">Drag the sliders. The three colored regions are what the low, mid, and high compressors each "see."</p>
+      </div>
+    </article>
+
+    <article class="lesson">
+      <h2>4. Per-band settings</h2>
+      <p>
+        Each band gets its own threshold, ratio, attack, release, and makeup gain. That's
+        the whole point — you can compress boomy bass hard while leaving the mids alone, or
+        tame harsh "s" sounds in the highs without dulling the body of a vocal.
+      </p>
+      <p>Head to the <button class="linklike" data-go="playground">Playground</button> to try it on real audio.</p>
+    </article>
+
+    <article class="lesson">
+      <h2>5. What is it good for?</h2>
+      <div class="usecases">
+        <div class="uc">
+          <h3>Mastering glue</h3>
+          <p>Gentle compression (1.5:1 – 2:1, low threshold, slow attack) across all three bands
+            to make a mix feel cohesive and loud without obvious pumping.</p>
+        </div>
+        <div class="uc">
+          <h3>Taming boomy bass</h3>
+          <p>Only the low band compresses hard. Sub bass notes that jump out get squashed,
+            while the rest of the mix stays untouched.</p>
+        </div>
+        <div class="uc">
+          <h3>De-essing</h3>
+          <p>A narrow high band (say 5–9 kHz) with a fast attack and high ratio catches harsh
+            "s" and "t" sounds without dulling the rest of the vocal.</p>
+        </div>
+        <div class="uc">
+          <h3>Broadcast / loudness</h3>
+          <p>Radio and podcast processors use multiband comp to keep everything at a consistent
+            loudness regardless of whether the program is speech, music, or a mix of both.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="lesson">
+      <h2>6. Pitfalls</h2>
+      <ul class="pitfalls">
+        <li><strong>Over-squashing.</strong> Too much reduction on every band = flat, lifeless mix. Dynamics are good.</li>
+        <li><strong>Pumping within a band.</strong> Short attack + short release on a kick-heavy low band can still pump audibly.</li>
+        <li><strong>Phase smearing.</strong> Crossover filters introduce phase shifts. Usually inaudible with modern designs (Linkwitz–Riley), but stacking several multibands can add up.</li>
+        <li><strong>Solving EQ problems with compression.</strong> If a frequency range is always too loud, EQ it. Compression is for <em>dynamic</em> problems.</li>
+        <li><strong>Set-and-forget ratios.</strong> Every mix is different. The preset is a starting point, not the answer.</li>
+      </ul>
+    </article>
+
+    <div class="next-up">
+      <button class="go-btn" data-go="playground">Try the Playground →</button>
+    </div>
+  </section>
+
+  <!-- ============ PLAYGROUND ============ -->
+  <section id="playground" class="panel" role="tabpanel">
+    <h2>Playground</h2>
+    <p class="panel-intro">Pick a demo (or upload a file), hit play, and shape the three bands in real time. Toggle bypass to A/B with the uncompressed signal.</p>
+
+    <div class="transport">
+      <div class="transport-group">
+        <label for="demo-select">Source</label>
+        <select id="demo-select">
+          <option value="drums">Drum loop</option>
+          <option value="mix">Full mix</option>
+          <option value="bass">Bass-heavy loop</option>
+          <option value="vocal">Vocal-ish (for de-essing)</option>
+          <option value="file">Uploaded file…</option>
+        </select>
+        <input type="file" id="file-input" accept="audio/*" hidden />
+        <button class="btn small" id="file-btn">Upload</button>
+      </div>
+
+      <div class="transport-group">
+        <button class="btn primary" id="play-btn">▶ Play</button>
+        <button class="btn" id="stop-btn">■ Stop</button>
+        <label class="checkbox"><input type="checkbox" id="loop-chk" checked /> Loop</label>
+      </div>
+
+      <div class="transport-group">
+        <label class="toggle" for="bypass-chk">
+          <input type="checkbox" id="bypass-chk" />
+          <span>Bypass MBC</span>
+        </label>
+      </div>
+
+      <div class="transport-group">
+        <label>Output <span class="num" data-for="out-gain">0 dB</span>
+          <input type="range" id="out-gain" min="-24" max="12" value="0" step="0.5" />
+        </label>
+      </div>
+    </div>
+
+    <div class="spectrum-card">
+      <canvas id="spectrum" width="1000" height="160" aria-label="Live frequency spectrum"></canvas>
+      <div class="xover-live">
+        <label>Low/Mid XO <span class="num" data-for="pg-xo-low">150 Hz</span>
+          <input type="range" id="pg-xo-low" min="40" max="1000" value="150" step="1" />
+        </label>
+        <label>Mid/High XO <span class="num" data-for="pg-xo-high">3000 Hz</span>
+          <input type="range" id="pg-xo-high" min="800" max="12000" value="3000" step="10" />
+        </label>
+      </div>
+    </div>
+
+    <div class="bands" id="bands">
+      <!-- band strips rendered by app.js -->
+    </div>
+
+    <div class="presets">
+      <span class="preset-label">Presets:</span>
+      <button class="btn preset" data-preset="reset">Reset</button>
+      <button class="btn preset" data-preset="subtle">Mastering glue (subtle)</button>
+      <button class="btn preset" data-preset="bass">Tame bass</button>
+      <button class="btn preset" data-preset="deess">De-ess</button>
+      <button class="btn preset" data-preset="aggro">Aggressive</button>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section id="quiz" class="panel" role="tabpanel">
+    <h2>Quiz</h2>
+    <p class="panel-intro">Check what you picked up. Instant feedback on each question.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <!-- ============ CHALLENGE ============ -->
+  <section id="challenge" class="panel" role="tabpanel">
+    <h2>Challenge</h2>
+    <p class="panel-intro">Diagnose a problem mix, dial in a fix, and explain your reasoning.</p>
+    <div id="challenge-root"></div>
+  </section>
+
+</main>
+
+<footer class="site-footer wrap">
+  <p>Built for ear training. Code on <a href="https://github.com/adamborecki/multiband">GitHub</a>.</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+<script src="js/audio-engine.js"></script>
+<script src="js/quiz.js"></script>
+<script src="js/challenge.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
