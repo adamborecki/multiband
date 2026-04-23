@@ -27,12 +27,18 @@
       window.Challenge.render(document.getElementById('challenge-root'));
       challengeRendered = true;
     }
+    window.Session.setTab(name);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   tabs.forEach(t => t.addEventListener('click', () => activateTab(t.dataset.tab)));
   document.querySelectorAll('[data-go]').forEach(el => {
     el.addEventListener('click', () => activateTab(el.dataset.go));
   });
+
+  // Attach panel listeners for click / slider-move counts
+  panels.forEach(p => window.Session.attachPanel(p.id, p));
+  // Initial tab is Guided (set active in HTML)
+  window.Session.setTab('guided');
 
   // =========================================================
   // Helpers
@@ -130,8 +136,14 @@
       ctx.fillText(`Threshold ${T.toFixed(0)} dB`, tx + 4, y1 + 12);
     }
 
-    thr.addEventListener('input', draw);
-    rat.addEventListener('input', draw);
+    thr.addEventListener('input', () => {
+      window.Session.guided.refresherThreshold = parseFloat(thr.value);
+      draw();
+    });
+    rat.addEventListener('input', () => {
+      window.Session.guided.refresherRatio = parseFloat(rat.value);
+      draw();
+    });
     draw();
   })();
 
@@ -220,10 +232,12 @@
 
     low.addEventListener('input', () => {
       if (parseFloat(low.value) >= parseFloat(high.value)) low.value = parseFloat(high.value) - 50;
+      window.Session.guided.crossoverLow = parseFloat(low.value);
       draw();
     });
     high.addEventListener('input', () => {
       if (parseFloat(high.value) <= parseFloat(low.value)) high.value = parseFloat(low.value) + 50;
+      window.Session.guided.crossoverHigh = parseFloat(high.value);
       draw();
     });
     draw();
@@ -301,6 +315,7 @@
         Object.keys(bandEls).forEach(k => {
           bandEls[k].soloBtn.classList.toggle('on', newSolo === k);
         });
+        window.Session.noteSolo();
       });
       const muteBtn = document.createElement('button');
       muteBtn.textContent = 'M';
@@ -311,6 +326,7 @@
         const on = !muteBtn.classList.contains('on');
         muteBtn.classList.toggle('on', on);
         mbc.setMute(name, on);
+        window.Session.noteMute();
       });
       toggles.appendChild(soloBtn); toggles.appendChild(muteBtn);
       meta.appendChild(toggles);
@@ -358,8 +374,22 @@
   bindNumber(outGain, fmtDb);
 
   let isPlaying = false;
+  function syncUIToEngine() {
+    const mbc = window.Engine.getMBC();
+    if (!mbc) return;
+    mbc.setCrossovers(parseFloat(pgXoLow.value), parseFloat(pgXoHigh.value));
+    BANDS.forEach(({ name }) => {
+      BAND_CONTROLS.forEach(cfg => {
+        const v = parseFloat(bandEls[name].sliders[cfg.key].value);
+        mbc.setBand(name, cfg.key, v);
+      });
+    });
+    window.Engine.setOutputGainDb(parseFloat(outGain.value));
+    mbc.setBypass(bypassChk.checked);
+  }
   async function handlePlay() {
     const src = demoSelect.value;
+    if (isPlaying) window.Session.notePlayStop();
     const res = await window.Engine.play(src);
     if (!res.ok) {
       if (res.err === 'no-file') {
@@ -367,11 +397,14 @@
       }
       return;
     }
+    syncUIToEngine();
     isPlaying = true;
+    window.Session.notePlayStart(src);
     playBtn.textContent = '⏸ Pause';
   }
   function handleStop() {
     window.Engine.stop();
+    if (isPlaying) window.Session.notePlayStop();
     isPlaying = false;
     playBtn.textContent = '▶ Play';
   }
@@ -383,6 +416,7 @@
   bypassChk.addEventListener('change', () => {
     const mbc = window.Engine.getMBC();
     if (mbc) mbc.setBypass(bypassChk.checked);
+    window.Session.noteBypass();
   });
   outGain.addEventListener('input', () => window.Engine.setOutputGainDb(parseFloat(outGain.value)));
   demoSelect.addEventListener('change', () => {
@@ -395,6 +429,7 @@
     try {
       await window.Engine.loadFile(file);
       demoSelect.value = 'file';
+      window.Session.noteFileUpload(file.name);
       alert(`Loaded "${file.name}". Hit Play.`);
     } catch (err) {
       alert('Could not decode that file. Try a WAV or MP3.');
@@ -487,11 +522,22 @@
     });
   }
   document.querySelectorAll('.btn.preset').forEach(btn => {
-    btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
+    btn.addEventListener('click', () => {
+      applyPreset(btn.dataset.preset);
+      window.Session.notePreset(btn.dataset.preset);
+    });
   });
 
   // Initialize band range labels
   applyCrossovers();
+
+  // Expose playground state for the unified summary
+  window.Session.playgroundGetState = () => ({
+    xoLow: parseFloat(pgXoLow.value),
+    xoHigh: parseFloat(pgXoHigh.value),
+    outputDb: parseFloat(outGain.value),
+    mbc: window.Engine.getMBC(),
+  });
 
   // =========================================================
   // Spectrum drawing + GR meter polling

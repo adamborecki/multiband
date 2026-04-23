@@ -167,10 +167,17 @@
     score.innerHTML = `Score: <span class="big">0 / ${QUESTIONS.length}</span>`;
     root.appendChild(score);
 
-    // Summary / clipboard controls
+    // Expose current quiz state for the unified session summary
+    window.Session.quizGetState = () => ({
+      correct: state.correct,
+      chosen: state.chosen.slice(),
+      questions: QUESTIONS,
+    });
+
+    // Full session summary (generated here, lives on Session module)
     const summary = buildSummaryBlock({
-      title: 'Quiz Summary',
-      generate: () => buildQuizSummary(state),
+      title: 'Session Summary',
+      generate: () => window.Session.generateSummary(),
     });
     root.appendChild(summary);
 
@@ -189,31 +196,6 @@
     }
   }
 
-  function buildQuizSummary(state) {
-    const answered = state.answered.filter(Boolean).length;
-    const pct = answered === 0 ? 0 : Math.round(100 * state.correct / QUESTIONS.length);
-    const lines = [];
-    lines.push('Multiband Compression — Quiz Summary');
-    lines.push(`Date: ${new Date().toLocaleString()}`);
-    lines.push(`Score: ${state.correct} / ${QUESTIONS.length} (${pct}%)`);
-    lines.push(`Questions answered: ${answered} / ${QUESTIONS.length}`);
-    lines.push('');
-    QUESTIONS.forEach((q, i) => {
-      const chosen = state.chosen[i];
-      const correctIdx = q.correct;
-      let status;
-      if (chosen == null) status = 'unanswered';
-      else if (chosen === correctIdx) status = 'CORRECT';
-      else status = 'wrong';
-      lines.push(`${i + 1}. ${q.q}`);
-      if (chosen != null) lines.push(`   Your answer: ${q.options[chosen]}`);
-      else lines.push(`   Your answer: (skipped)`);
-      lines.push(`   Correct answer: ${q.options[correctIdx]}`);
-      lines.push(`   Result: ${status}`);
-      lines.push('');
-    });
-    return lines.join('\n');
-  }
 
   function escape(s) {
     return s.replace(/[&<>"']/g, c => ({

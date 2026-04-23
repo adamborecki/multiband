@@ -81,31 +81,19 @@
       root.appendChild(card);
     });
 
+    // Expose challenge responses to the unified session summary
+    window.Session.challengeGetState = () => SCENARIOS.map((sc, scIdx) => ({
+      title: sc.title,
+      brief: sc.brief,
+      questions: sc.questions.slice(),
+      responses: sc.questions.map((_, qIdx) => responses[scIdx][qIdx]?.value || ''),
+    }));
+
     const summary = window.SummaryUI.buildSummaryBlock({
-      title: 'Challenge Summary',
-      generate: () => buildChallengeSummary(responses),
+      title: 'Session Summary',
+      generate: () => window.Session.generateSummary(),
     });
     root.appendChild(summary);
-  }
-
-  function buildChallengeSummary(responses) {
-    const lines = [];
-    lines.push('Multiband Compression — Challenge Reflections');
-    lines.push(`Date: ${new Date().toLocaleString()}`);
-    lines.push('');
-    SCENARIOS.forEach((sc, scIdx) => {
-      lines.push(`== ${sc.title} ==`);
-      lines.push(`Brief: ${sc.brief}`);
-      lines.push('');
-      sc.questions.forEach((q, qIdx) => {
-        const answer = (responses[scIdx][qIdx]?.value || '').trim();
-        lines.push(`Q${qIdx + 1}: ${q}`);
-        lines.push(`A: ${answer || '(no response)'}`);
-        lines.push('');
-      });
-      lines.push('');
-    });
-    return lines.join('\n');
   }
 
   function escape(s) {
